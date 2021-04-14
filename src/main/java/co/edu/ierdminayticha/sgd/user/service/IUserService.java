@@ -11,6 +11,8 @@ public interface IUserService {
 	UserResponseDto create(UserRequestDto dto);
 
 	UserResponseDto findById(Long id);
+	
+	UserResponseDto findByUserName(String userName);
 
 	List<UserResponseListDto> findAll();
 

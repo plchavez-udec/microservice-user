@@ -20,45 +20,33 @@ import co.edu.ierdminayticha.sgd.user.dto.UserResponseListDto;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
-@Api(value = "Api Microservicio para la gestion de usuarios", 
-     tags = "Api Microservicio para la gestion de usuarios")
+@Api(value = "Api Microservicio para la gestion de usuarios", tags = "Api Microservicio para la gestion de usuarios")
 public interface IUserApi {
-	
-	@ApiOperation(value = "Crear usuario",
-		          response = UserResponseDto.class)
-	@PostMapping(value = "", 
-				 consumes = MediaType.APPLICATION_JSON_VALUE, 
-				 produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<UserResponseDto> create( @Validated(IRequestCreateValidation.class)
-							  @RequestBody 
-							  UserRequestDto request);
 
-	@ApiOperation(value = "Obtener usuario por Id",
-	              response = UserResponseDto.class)
-	@GetMapping(value = "{usuario-id}", 
-			    produces = MediaType.APPLICATION_JSON_VALUE)
+	@ApiOperation(value = "Crear usuario", response = UserResponseDto.class)
+	@PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<UserResponseDto> create(
+			@Validated(IRequestCreateValidation.class) @RequestBody UserRequestDto request);
+
+	@ApiOperation(value = "Obtener usuario por Id", response = UserResponseDto.class)
+	@GetMapping(value = "{usuario-id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<UserResponseDto> findById(@PathVariable("usuario-id") Long id);
 
-	@ApiOperation(value = "Obtener lista de usuarios",
-            	  response = UserResponseListDto.class)
-	@GetMapping(value = "", 
-				produces = MediaType.APPLICATION_JSON_VALUE)
+	@ApiOperation(value = "Obtener lista de usuarios", response = UserResponseListDto.class)
+	@GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<UserResponseListDto>> findAll();
 
-	@ApiOperation(value = "Actualización parcial del usuario",
-      	  		  response = UserRequestDto.class)
-	@PatchMapping(value = "{usuario-id}", 
-			 	  consumes = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<?> update(
-							 @PathVariable("usuario-id")
-							 Long id,
-							 @Validated(IRequestUpdateValidation.class)
-					  		 @RequestBody
-							 UserRequestDto request);
+	@ApiOperation(value = "Actualización parcial del usuario", response = UserRequestDto.class)
+	@PatchMapping(value = "{usuario-id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<?> update(@PathVariable("usuario-id") Long id,
+			@Validated(IRequestUpdateValidation.class) @RequestBody UserRequestDto request);
 
-	@ApiOperation(value = "Eliminar usuario",
-	  		  response = UserRequestDto.class)
+	@ApiOperation(value = "Eliminar usuario", response = UserRequestDto.class)
 	@DeleteMapping(value = "{usuario-id}")
 	ResponseEntity<?> delete(Long id);
+
+	@ApiOperation(value = "Obtener usuario por userName", response = UserResponseDto.class)
+	@GetMapping(value = "/user/{user-name}", produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<UserResponseDto> findByUserName(@PathVariable("user-name") String id);
 
 }

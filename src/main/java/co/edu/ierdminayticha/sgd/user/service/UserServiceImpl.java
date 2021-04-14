@@ -1,68 +1,73 @@
 package co.edu.ierdminayticha.sgd.user.service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import co.edu.ierdminayticha.sgd.user.dto.RoleDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserRequestDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserResponseDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserResponseListDto;
 import co.edu.ierdminayticha.sgd.user.entity.UserEntity;
+import co.edu.ierdminayticha.sgd.user.entity.UserRoleEntity;
 import co.edu.ierdminayticha.sgd.user.exception.GeneralException;
+import co.edu.ierdminayticha.sgd.user.repository.IRoleRepository;
 import co.edu.ierdminayticha.sgd.user.repository.IUserRepository;
+import co.edu.ierdminayticha.sgd.user.repository.IUserRoleRepository;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Service
 public class UserServiceImpl implements IUserService {
 
-	private static final String EXISTING_RESOURCE_MESSAGE = "El recurso con id (%s) ya existe ";
-	private static final String NO_EXISTEN_RESOURCE_MESSAGE = "No existe el recurso con id (%s) ";
+	private static final String NO_EXISTEN_RESOURCE_MESSAGE = "No existe el usuario con id (%s) ";
 	private static final String NO_EXISTEN_INFO_MESSAGE = "No existe información para mostrar";
 
 	@Autowired
 	private IUserRepository repository;
 
 	@Autowired
-	private ModelMapper modelMapper;
+	private IUserRoleRepository userRoleRepository;
 
 	@Autowired
-	private RestTemplate restTemplate;
-	
+	private IRoleRepository roleRepository;
+
+	@Autowired
+	private ModelMapper modelMapper;
+
 	@Override
-	public UserResponseDto create(UserRequestDto dto) {
-		
-		log.info("ReferenciaEntityServiceImpl : create - Creando recurso");
+	public UserResponseDto create(UserRequestDto request) {
 
-		validateExistenceOfTheResource(dto.getId());
+		log.info("UserServiceImpl : create - Creando usuario");
 
-		UserEntity entity = toPersist(dto);
+		validateExistenceOfTheResource(request.getUsername());
 
-		return createSuccessfulResponse(entity);
+		toPersist(request);
+
+		return null;
 
 	}
 
 	@Override
 	public UserResponseDto findById(Long id) {
-		
-		log.info("ReferenciaEntityServiceImpl : findById - Consultando recurso por Id");
-		
+
+		log.info("UserServiceImpl : findById - Consultando usuario por Id");
+
 		UserEntity entity = this.repository.findById(id)
 				.orElseThrow(() -> new NoSuchElementException(String.format(NO_EXISTEN_RESOURCE_MESSAGE, id)));
-				
+
 		return createSuccessfulResponse(entity);
 	}
 
 	@Override
 	public List<UserResponseListDto> findAll() {
-		
-		log.info("ReferenciaEntityServiceImpl : findAll - Consultando lista de  recursos");
+
+		log.info("UserServiceImpl : findAll - Consultando lista de usuarios");
 
 		Iterable<UserEntity> entityList = this.repository.findAll();
 
@@ -75,8 +80,8 @@ public class UserServiceImpl implements IUserService {
 
 	@Override
 	public void update(Long id, UserRequestDto dto) {
-		
-		log.info("ReferenciaEntityServiceImpl : update - Actualizando recurso");
+
+		log.info("UserServiceImpl : update - Actualizando recurso");
 
 		UserEntity entity = this.repository.findById(id)
 				.orElseThrow(() -> new NoSuchElementException(String.format(NO_EXISTEN_RESOURCE_MESSAGE, id)));
@@ -91,60 +96,111 @@ public class UserServiceImpl implements IUserService {
 
 	@Override
 	public void delete(Long id) {
-		
-		log.info("ReferenciaEntityServiceImpl : delete - Eliminando recurso");
-		
-		UserEntity entity = this.repository.findById(id)
-				.orElseThrow(() -> new NoSuchElementException(String.format(NO_EXISTEN_RESOURCE_MESSAGE, id)));
-		
-		repository.delete(entity);
+
+		log.info("UserServiceImpl : delete - Eliminando usuario");
+
+		this.repository.disableUser(id);
 
 	}
+	
+	@Override
+	public UserResponseDto findByUserName(String userName) {
+		
+		log.info("UserServiceImpl : findByUserName - Consultando usuario");
 
-	private void validateExistenceOfTheResource(Long id) {
+		UserEntity user = this.repository.findByUsername(userName);
+		
+		if (user == null) {
+			throw new GeneralException(String.format("No existe el usuario %s", userName));
+		}
 
-		UserEntity entity = this.repository.findById(id).get();
+		return createSuccessfulResponse(user);
+	}
 
-		if (entity != null) {
-			
-			log.info("ReferenciaEntityServiceImpl : validateExistenceOfTheResource - "
-					+ "el recurso con id ({}) ya existe", id);
-			
-			throw new GeneralException(String.format(EXISTING_RESOURCE_MESSAGE, id));					
+	private void validateExistenceOfTheResource(String userName) {
+
+		UserEntity user = this.repository.findByUsername(userName);
+
+		if (user != null) {
+			throw new GeneralException(String.format("El usuario %s ya existe en el sistema", userName));
 		}
 
 	}
 
-	private UserEntity toPersist(UserRequestDto dto) {
+	private UserEntity toPersist(UserRequestDto request) {
 
-		UserEntity entity = this.modelMapper.map(dto, UserEntity.class);
+		UserEntity userIn = this.modelMapper.map(request, UserEntity.class);
+		userIn.setCreationDate(new Date());
 
-		entity.setCreationDate(new Date());
-		
-		log.info("ReferenciaEntityServiceImpl : toPersist - "
-				+ "recurso a persistir: ", entity);
+		log.info("UserServiceImpl : toPersist Recurso ususario a persistir: ", userIn);
 
-		entity = this.repository.save(entity);
+		UserEntity userOut = this.repository.save(userIn);
 
-		return entity;
+		request.getRoles().forEach(roleDto -> {
+			UserRoleEntity userRole = new UserRoleEntity();
+			userRole.setUser(userOut);
+			userRole.setRole(this.roleRepository.findById(roleDto.getId())
+					.orElseThrow(() -> new NoSuchElementException("No existe el rol informado")));
+			this.userRoleRepository.save(userRole);
+		});
+
+		return userOut;
 
 	}
 
-	private UserResponseDto createSuccessfulResponse(UserEntity entity) {
+	private UserResponseDto createSuccessfulResponse(UserEntity userEntity) {
 
-		UserResponseDto response = this.modelMapper.map(entity, UserResponseDto.class);
+		UserResponseDto userdto = new UserResponseDto();
+		userdto.setId(userEntity.getId());
+		userdto.setNombre(userEntity.getNombre());
+		userdto.setApellido(userEntity.getApellido());
+		userdto.setEmail(userEntity.getEmail());
+		userdto.setUsername(userEntity.getUsername());
+		userdto.setPassword(userEntity.getPassword());
+		userdto.setEnabled(userEntity.getEnabled());
+		userdto.setCreationDate(userEntity.getCreationDate());
+		userdto.setLastModifiedDate(userEntity.getLastModifiedDate());
+		userdto.setRoles(new ArrayList<>());
+		userEntity.getListUserRole().forEach(roleEntity -> {
+			RoleDto roleDto = new RoleDto();
+			roleDto.setName(roleEntity.getRole().getNombre());
+			userdto.getRoles().add(roleDto);
+		});
 
-		return response;
+		return userdto;
 
 	}
 
 	private List<UserResponseListDto> createSuccessfulResponse(Iterable<UserEntity> entityList) {
 
-		List<UserResponseListDto> dtoList = modelMapper.map(entityList, new TypeToken<List<UserResponseListDto>>() {
-		}.getType());
+		List<UserResponseListDto> dtoList = new ArrayList<>();
+
+		entityList.forEach(userEntity -> {
+			UserResponseListDto userdto = mapOutUserResponseListDto(userEntity);
+			dtoList.add(userdto);
+		});
 
 		return dtoList;
 
+	}
+
+	private UserResponseListDto mapOutUserResponseListDto(UserEntity userEntity) {
+		UserResponseListDto userdto = new UserResponseListDto();
+		userdto.setId(userEntity.getId());
+		userdto.setNombre(userEntity.getNombre());
+		userdto.setApellido(userEntity.getApellido());
+		userdto.setEmail(userEntity.getEmail());
+		userdto.setUsername(userEntity.getUsername());
+		userdto.setPassword(userEntity.getPassword());
+		userdto.setEnabled(userEntity.getEnabled());
+		userdto.setRoles(new ArrayList<>());
+		userEntity.getListUserRole().forEach(roleEntity -> {
+			RoleDto roleDto = new RoleDto();
+			roleDto.setName(roleEntity.getRole().getNombre());
+			userdto.getRoles().add(roleDto);
+		});
+
+		return userdto;
 	}
 
 }
