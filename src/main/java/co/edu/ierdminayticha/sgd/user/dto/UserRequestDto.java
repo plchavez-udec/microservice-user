@@ -12,7 +12,6 @@ public class UserRequestDto implements Serializable {
 
 	private String username;
 	private String password;
-	private Boolean enabled;
 	private String nombre;
 	private String apellido;
 	private String email;

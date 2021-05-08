@@ -7,12 +7,12 @@ import java.util.NoSuchElementException;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import co.edu.ierdminayticha.sgd.user.dto.RoleDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserRequestDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserResponseDto;
-import co.edu.ierdminayticha.sgd.user.dto.UserResponseListDto;
 import co.edu.ierdminayticha.sgd.user.entity.UserEntity;
 import co.edu.ierdminayticha.sgd.user.entity.UserRoleEntity;
 import co.edu.ierdminayticha.sgd.user.exception.GeneralException;
@@ -30,112 +30,86 @@ public class UserServiceImpl implements IUserService {
 
 	@Autowired
 	private IUserRepository repository;
-
 	@Autowired
 	private IUserRoleRepository userRoleRepository;
-
 	@Autowired
 	private IRoleRepository roleRepository;
-
 	@Autowired
 	private ModelMapper modelMapper;
+	@Autowired
+	private BCryptPasswordEncoder passwordEncoder;
 
 	@Override
 	public UserResponseDto create(UserRequestDto request) {
-
-		log.info("UserServiceImpl : create - Creando usuario");
-
-		validateExistenceOfTheResource(request.getUsername());
-
-		toPersist(request);
-
-		return null;
+		log.info("Crear usuario {}", request);
+		validateExistenceOfResource(request.getUsername());
+		UserEntity usertOut = toPersist(request);
+		return createSuccessfulResponse(usertOut);
 
 	}
 
 	@Override
 	public UserResponseDto findById(Long id) {
-
-		log.info("UserServiceImpl : findById - Consultando usuario por Id");
-
+		log.info("Consultando usuario por Id {}", id);
 		UserEntity entity = this.repository.findById(id)
 				.orElseThrow(() -> new NoSuchElementException(String.format(NO_EXISTEN_RESOURCE_MESSAGE, id)));
-
 		return createSuccessfulResponse(entity);
 	}
 
 	@Override
-	public List<UserResponseListDto> findAll() {
-
-		log.info("UserServiceImpl : findAll - Consultando lista de usuarios");
-
+	public List<UserResponseDto> findAll() {
+		log.info("Consultando lista de usuarios");
 		Iterable<UserEntity> entityList = this.repository.findAll();
-
 		if (entityList == null) {
 			throw new NoSuchElementException(NO_EXISTEN_INFO_MESSAGE);
 		}
-
 		return createSuccessfulResponse(entityList);
 	}
 
 	@Override
 	public void update(Long id, UserRequestDto dto) {
-
 		log.info("UserServiceImpl : update - Actualizando recurso");
-
 		UserEntity entity = this.repository.findById(id)
 				.orElseThrow(() -> new NoSuchElementException(String.format(NO_EXISTEN_RESOURCE_MESSAGE, id)));
-
 		this.modelMapper.map(dto, entity);
-
 		entity.setLastModifiedDate(new Date());
-
 		this.repository.save(entity);
-
 	}
 
 	@Override
 	public void delete(Long id) {
-
 		log.info("UserServiceImpl : delete - Eliminando usuario");
-
 		this.repository.disableUser(id);
-
 	}
-	
+
 	@Override
 	public UserResponseDto findByUserName(String userName) {
-		
 		log.info("UserServiceImpl : findByUserName - Consultando usuario");
-
 		UserEntity user = this.repository.findByUsername(userName);
-		
 		if (user == null) {
 			throw new GeneralException(String.format("No existe el usuario %s", userName));
 		}
-
 		return createSuccessfulResponse(user);
 	}
 
-	private void validateExistenceOfTheResource(String userName) {
-
+	private void validateExistenceOfResource(String userName) {
 		UserEntity user = this.repository.findByUsername(userName);
-
 		if (user != null) {
 			throw new GeneralException(String.format("El usuario %s ya existe en el sistema", userName));
 		}
-
 	}
 
 	private UserEntity toPersist(UserRequestDto request) {
-
-		UserEntity userIn = this.modelMapper.map(request, UserEntity.class);
+		UserEntity userIn = new UserEntity();
+		userIn.setUsername(request.getUsername());
+		userIn.setEnabled(true);
+		userIn.setNombre(request.getNombre());
+		userIn.setApellido(request.getApellido());
+		userIn.setEmail(request.getEmail());
+		userIn.setPassword(passwordEncoder.encode(request.getPassword()));
 		userIn.setCreationDate(new Date());
-
 		log.info("UserServiceImpl : toPersist Recurso ususario a persistir: ", userIn);
-
 		UserEntity userOut = this.repository.save(userIn);
-
 		request.getRoles().forEach(roleDto -> {
 			UserRoleEntity userRole = new UserRoleEntity();
 			userRole.setUser(userOut);
@@ -143,13 +117,11 @@ public class UserServiceImpl implements IUserService {
 					.orElseThrow(() -> new NoSuchElementException("No existe el rol informado")));
 			this.userRoleRepository.save(userRole);
 		});
-
 		return userOut;
 
 	}
 
 	private UserResponseDto createSuccessfulResponse(UserEntity userEntity) {
-
 		UserResponseDto userdto = new UserResponseDto();
 		userdto.setId(userEntity.getId());
 		userdto.setNombre(userEntity.getNombre());
@@ -159,48 +131,28 @@ public class UserServiceImpl implements IUserService {
 		userdto.setPassword(userEntity.getPassword());
 		userdto.setEnabled(userEntity.getEnabled());
 		userdto.setCreationDate(userEntity.getCreationDate());
-		userdto.setLastModifiedDate(userEntity.getLastModifiedDate());
+		if (userEntity.getLastModifiedDate() != null) {
+			userdto.setLastModifiedDate(userEntity.getLastModifiedDate());
+		}
 		userdto.setRoles(new ArrayList<>());
-		userEntity.getListUserRole().forEach(roleEntity -> {
+		for (UserRoleEntity userRoleEntity : userEntity.getListUserRole()) {
 			RoleDto roleDto = new RoleDto();
-			roleDto.setName(roleEntity.getRole().getNombre());
+			roleDto.setName(userRoleEntity.getRole().getNombre());
 			userdto.getRoles().add(roleDto);
-		});
-
+		}
 		return userdto;
 
 	}
 
-	private List<UserResponseListDto> createSuccessfulResponse(Iterable<UserEntity> entityList) {
-
-		List<UserResponseListDto> dtoList = new ArrayList<>();
-
-		entityList.forEach(userEntity -> {
-			UserResponseListDto userdto = mapOutUserResponseListDto(userEntity);
-			dtoList.add(userdto);
-		});
-
+	private List<UserResponseDto> createSuccessfulResponse(Iterable<UserEntity> entityList) {
+		List<UserResponseDto> dtoList = new ArrayList<>();
+		for (UserEntity userEntity : entityList) {
+			UserResponseDto userResponseDto = new UserResponseDto();
+			userResponseDto = createSuccessfulResponse(userEntity);
+			dtoList.add(userResponseDto);
+		}
 		return dtoList;
 
-	}
-
-	private UserResponseListDto mapOutUserResponseListDto(UserEntity userEntity) {
-		UserResponseListDto userdto = new UserResponseListDto();
-		userdto.setId(userEntity.getId());
-		userdto.setNombre(userEntity.getNombre());
-		userdto.setApellido(userEntity.getApellido());
-		userdto.setEmail(userEntity.getEmail());
-		userdto.setUsername(userEntity.getUsername());
-		userdto.setPassword(userEntity.getPassword());
-		userdto.setEnabled(userEntity.getEnabled());
-		userdto.setRoles(new ArrayList<>());
-		userEntity.getListUserRole().forEach(roleEntity -> {
-			RoleDto roleDto = new RoleDto();
-			roleDto.setName(roleEntity.getRole().getNombre());
-			userdto.getRoles().add(roleDto);
-		});
-
-		return userdto;
 	}
 
 }

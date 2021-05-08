@@ -1,6 +1,5 @@
 package co.edu.ierdminayticha.sgd.user.entity;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 

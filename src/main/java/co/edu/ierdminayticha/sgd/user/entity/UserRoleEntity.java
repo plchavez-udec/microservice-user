@@ -26,7 +26,7 @@ public class UserRoleEntity {
 
 	@ManyToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "\"ID_USUARIO\"")
-private UserEntity user;
+	private UserEntity user;
 
 	@ManyToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "\"ID_ROL\"")
