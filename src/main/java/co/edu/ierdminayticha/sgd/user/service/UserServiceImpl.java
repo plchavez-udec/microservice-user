@@ -44,7 +44,7 @@ public class UserServiceImpl implements IUserService {
 		log.info("Crear usuario {}", request);
 		validateExistenceOfResource(request.getUsername());
 		UserEntity usertOut = toPersist(request);
-		return createSuccessfulResponse(usertOut);
+		return createSuccessfulResponse(usertOut, "CREAR");
 
 	}
 
@@ -53,7 +53,7 @@ public class UserServiceImpl implements IUserService {
 		log.info("Consultando usuario por Id {}", id);
 		UserEntity entity = this.repository.findById(id)
 				.orElseThrow(() -> new NoSuchElementException(String.format(NO_EXISTEN_RESOURCE_MESSAGE, id)));
-		return createSuccessfulResponse(entity);
+		return createSuccessfulResponse(entity, "BUSCAR");
 	}
 
 	@Override
@@ -89,7 +89,7 @@ public class UserServiceImpl implements IUserService {
 		if (user == null) {
 			throw new GeneralException(String.format("No existe el usuario %s", userName));
 		}
-		return createSuccessfulResponse(user);
+		return createSuccessfulResponse(user, "BUSCAR");
 	}
 
 	private void validateExistenceOfResource(String userName) {
@@ -121,7 +121,7 @@ public class UserServiceImpl implements IUserService {
 
 	}
 
-	private UserResponseDto createSuccessfulResponse(UserEntity userEntity) {
+	private UserResponseDto createSuccessfulResponse(UserEntity userEntity, String accion) {
 		UserResponseDto userdto = new UserResponseDto();
 		userdto.setId(userEntity.getId());
 		userdto.setNombre(userEntity.getNombre());
@@ -134,11 +134,13 @@ public class UserServiceImpl implements IUserService {
 		if (userEntity.getLastModifiedDate() != null) {
 			userdto.setLastModifiedDate(userEntity.getLastModifiedDate());
 		}
-		userdto.setRoles(new ArrayList<>());
-		for (UserRoleEntity userRoleEntity : userEntity.getListUserRole()) {
-			RoleDto roleDto = new RoleDto();
-			roleDto.setName(userRoleEntity.getRole().getNombre());
-			userdto.getRoles().add(roleDto);
+		if (accion.equals("BUSCAR")) {
+			userdto.setRoles(new ArrayList<>());
+			for (UserRoleEntity userRoleEntity : userEntity.getListUserRole()) {
+				RoleDto roleDto = new RoleDto();
+				roleDto.setName(userRoleEntity.getRole().getNombre());
+				userdto.getRoles().add(roleDto);
+			}
 		}
 		return userdto;
 
@@ -148,7 +150,7 @@ public class UserServiceImpl implements IUserService {
 		List<UserResponseDto> dtoList = new ArrayList<>();
 		for (UserEntity userEntity : entityList) {
 			UserResponseDto userResponseDto = new UserResponseDto();
-			userResponseDto = createSuccessfulResponse(userEntity);
+			userResponseDto = createSuccessfulResponse(userEntity, "BUSCAR");
 			dtoList.add(userResponseDto);
 		}
 		return dtoList;
