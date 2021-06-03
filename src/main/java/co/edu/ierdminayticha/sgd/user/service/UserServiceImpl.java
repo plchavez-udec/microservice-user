@@ -59,7 +59,7 @@ public class UserServiceImpl implements IUserService {
 	@Override
 	public List<UserResponseDto> findAll() {
 		log.info("Consultando lista de usuarios");
-		Iterable<UserEntity> entityList = this.repository.findAll();
+		Iterable<UserEntity> entityList = this.repository.findAllByEnabled(Boolean.TRUE);
 		if (entityList == null) {
 			throw new NoSuchElementException(NO_EXISTEN_INFO_MESSAGE);
 		}
@@ -78,7 +78,7 @@ public class UserServiceImpl implements IUserService {
 
 	@Override
 	public void delete(Long id) {
-		log.info("UserServiceImpl : delete - Eliminando usuario");
+		log.info("UserServiceImpl : delete - Eliminando usuario: {}", id);
 		this.repository.disableUser(id);
 	}
 
@@ -138,6 +138,7 @@ public class UserServiceImpl implements IUserService {
 			userdto.setRoles(new ArrayList<>());
 			for (UserRoleEntity userRoleEntity : userEntity.getListUserRole()) {
 				RoleDto roleDto = new RoleDto();
+				roleDto.setId(userRoleEntity.getId());
 				roleDto.setName(userRoleEntity.getRole().getNombre());
 				userdto.getRoles().add(roleDto);
 			}

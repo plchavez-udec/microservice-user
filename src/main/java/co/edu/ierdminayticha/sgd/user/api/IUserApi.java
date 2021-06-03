@@ -54,8 +54,8 @@ public interface IUserApi {
 
 	@ApiOperation(value = "Eliminar usuario", 
 				  response = UserRequestDto.class)
-	@DeleteMapping(value = "{usuario-id}")
-	public ResponseEntity<?> delete(Long id);
+	@DeleteMapping(value = "/{usuario-id}")
+	public ResponseEntity<?> delete(@PathVariable("usuario-id") Long id);
 
 	@ApiOperation(value = "Obtener usuario por userName", 
 				  response = UserResponseDto.class)
