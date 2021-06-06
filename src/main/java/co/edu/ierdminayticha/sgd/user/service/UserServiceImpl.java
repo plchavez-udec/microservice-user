@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import co.edu.ierdminayticha.sgd.user.dto.RoleDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserRequestDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserResponseDto;
+import co.edu.ierdminayticha.sgd.user.entity.RoleEntity;
 import co.edu.ierdminayticha.sgd.user.entity.UserEntity;
 import co.edu.ierdminayticha.sgd.user.entity.UserRoleEntity;
 import co.edu.ierdminayticha.sgd.user.exception.GeneralException;
@@ -157,5 +158,24 @@ public class UserServiceImpl implements IUserService {
 		return dtoList;
 
 	}
+
+	@Override
+	public List<RoleDto> findAllListaRoles() {
+		List<RoleDto> listaRolesDto= new ArrayList<>(); 
+		 List<RoleEntity> responseRepository=  (List<RoleEntity>) this.roleRepository.findAll();
+		 for (RoleEntity roleEntity : responseRepository) {
+			RoleDto rolDto= new RoleDto();
+			rolDto.setId(roleEntity.getId());
+			rolDto.setName(roleEntity.getNombre());
+			listaRolesDto.add(rolDto);
+			
+		}
+		
+		return listaRolesDto;
+	}
+	
+	//impl el metodo de listar roles de la interface
+	
+	
 
 }

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import co.edu.ierdminayticha.sgd.user.dto.IRequestCreateValidation;
 import co.edu.ierdminayticha.sgd.user.dto.IRequestUpdateValidation;
+import co.edu.ierdminayticha.sgd.user.dto.RoleDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserRequestDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserResponseDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserResponseListDto;
@@ -62,5 +63,9 @@ public interface IUserApi {
 	@GetMapping(value = "/user/{user-name}", 
 				produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<UserResponseDto> findByUserName(@PathVariable("user-name") String id);
+	
+	@GetMapping(value= "/role")
+	public ResponseEntity<List<RoleDto>> findAllRole();
+	
 
 }

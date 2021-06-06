@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.ierdminayticha.sgd.user.api.IUserApi;
+import co.edu.ierdminayticha.sgd.user.dto.RoleDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserRequestDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserResponseDto;
 import co.edu.ierdminayticha.sgd.user.service.IUserService;
@@ -68,6 +69,12 @@ public class UserController implements IUserApi {
 		log.info("Consultando recurso con userName " + "{}", userName);
 		UserResponseDto response = this.service.findByUserName(userName);
 		log.info("Transacción exitosa, recurso: {}", response);
+		return ResponseEntity.ok(response);
+	}
+
+	@Override
+	public ResponseEntity<List<RoleDto>> findAllRole() {
+		List<RoleDto> response= this.service.findAllListaRoles();
 		return ResponseEntity.ok(response);
 	}
 
