@@ -14,7 +14,7 @@ public interface IUserService {
 	List<UserResponseDto> findAll();
 	void update(Long id, UserRequestDto dto);
 	void delete(Long id);
-	//crear metodo que no recibe nada y retorna una lista de  roles
+	
 	
 	List<RoleDto> findAllListaRoles();
 }

@@ -174,7 +174,7 @@ public class UserServiceImpl implements IUserService {
 		return listaRolesDto;
 	}
 	
-	//impl el metodo de listar roles de la interface
+	
 	
 	
 
