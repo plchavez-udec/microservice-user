@@ -37,6 +37,8 @@ public class UserEntity {
 	private String apellido;
 	@Column(name = "\"CORREO\"")
 	private String email;
+	@Column(name = "\"USUARIO_CREACION\"")
+	private String creationUser;
 	@Column(name = "\"FECHA_CREACION\"")
 	private Date creationDate;
 	@Column(name = "\"FECHA_MODIFICACION\"")

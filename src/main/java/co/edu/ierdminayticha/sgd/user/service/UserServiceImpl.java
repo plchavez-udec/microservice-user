@@ -45,7 +45,6 @@ public class UserServiceImpl implements IUserService {
 		validateExistenceOfResource(request.getUsername());
 		UserEntity usertOut = toPersist(request);
 		return createSuccessfulResponse(usertOut, "CREAR");
-
 	}
 
 	@Override
@@ -106,6 +105,7 @@ public class UserServiceImpl implements IUserService {
 		userIn.setNombre(request.getNombre());
 		userIn.setApellido(request.getApellido());
 		userIn.setEmail(request.getEmail());
+		userIn.setCreationUser(request.getCreationUser());
 		userIn.setPassword(passwordEncoder.encode(request.getPassword()));
 		userIn.setCreationDate(new Date());
 		log.info("UserServiceImpl : toPersist Recurso ususario a persistir: ", userIn);
