@@ -11,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import co.edu.ierdminayticha.sgd.user.dto.RoleDto;
+import co.edu.ierdminayticha.sgd.user.dto.RoleInDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserRequestDto;
 import co.edu.ierdminayticha.sgd.user.dto.UserResponseDto;
 import co.edu.ierdminayticha.sgd.user.entity.UserEntity;
@@ -84,7 +85,7 @@ public class UserServiceImpl implements IUserService {
 	@Override
 	public UserResponseDto findByUserName(String userName) {
 		log.info("UserServiceImpl : findByUserName - Consultando usuario");
-		UserEntity user = this.repository.findByUsername(userName);
+		UserEntity user = this.repository.findByUsernameAndEnabled(userName, true);
 		if (user == null) {
 			throw new GeneralException(String.format("No existe el usuario %s", userName));
 		}
@@ -92,31 +93,37 @@ public class UserServiceImpl implements IUserService {
 	}
 
 	private void validateExistenceOfResource(String userName) {
-		UserEntity user = this.repository.findByUsername(userName);
+		UserEntity user = this.repository.findByUsernameAndEnabled(userName, true);
 		if (user != null) {
 			throw new GeneralException(String.format("El usuario %s ya existe en el sistema", userName));
 		}
 	}
 
 	private UserEntity toPersist(UserRequestDto request) {
-		UserEntity userIn = new UserEntity();
-		userIn.setUsername(request.getUsername());
-		userIn.setEnabled(true);
-		userIn.setNombre(request.getNombre());
-		userIn.setApellido(request.getApellido());
-		userIn.setEmail(request.getEmail());
-		userIn.setCreationUser(request.getCreationUser());
-		userIn.setPassword(passwordEncoder.encode(request.getPassword()));
-		userIn.setCreationDate(new Date());
-		log.info("UserServiceImpl : toPersist Recurso ususario a persistir: ", userIn);
-		UserEntity userOut = this.repository.save(userIn);
-		request.getRoles().forEach(roleDto -> {
-			UserRoleEntity userRole = new UserRoleEntity();
-			userRole.setUser(userOut);
-			userRole.setRole(this.roleRepository.findById(roleDto.getId())
-					.orElseThrow(() -> new NoSuchElementException("No existe el rol informado")));
-			this.userRoleRepository.save(userRole);
-		});
+		UserEntity userOut = null;
+		UserEntity user = this.repository.findByUsernameAndEnabled(request.getUsername(), false);
+		if (user == null) {
+			UserEntity userIn = new UserEntity();
+			userIn.setUsername(request.getUsername());
+			userIn.setEnabled(true);
+			userIn.setNombre(request.getNombre());
+			userIn.setApellido(request.getApellido());
+			userIn.setEmail(request.getEmail());
+			userIn.setCreationUser(request.getCreationUser());
+			userIn.setPassword(passwordEncoder.encode(request.getPassword()));
+			userIn.setCreationDate(new Date());
+			userOut = this.repository.save(userIn);
+			for (RoleInDto roleDto : request.getRoles()) {
+				UserRoleEntity userRole = new UserRoleEntity();
+				userRole.setUser(userOut);
+				userRole.setRole(this.roleRepository.findById(roleDto.getId())
+						.orElseThrow(() -> new NoSuchElementException("No existe el rol informado")));
+				this.userRoleRepository.save(userRole);
+			}
+		}else {
+			user.setEnabled(true);
+			userOut = this.repository.save(user);
+		}
 		return userOut;
 
 	}

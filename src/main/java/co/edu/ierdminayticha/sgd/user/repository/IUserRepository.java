@@ -1,7 +1,6 @@
 package co.edu.ierdminayticha.sgd.user.repository;
 
 import java.util.List;
-import java.util.Optional;
 
 import javax.transaction.Transactional;
 
@@ -17,7 +16,7 @@ public interface IUserRepository extends CrudRepository<UserEntity, Long> {
 	
 	List<UserEntity> findAllByEnabled(Boolean enabled);
 	
-	UserEntity findByUsername(String username);
+	UserEntity findByUsernameAndEnabled(String username, boolean enabled);
 	
 	@Transactional
 	@Modifying
